@@ -1,0 +1,51 @@
+name: Scrape & Update ParliamentPulse
+
+on:
+  workflow_dispatch:  # Manual trigger only — click "Run workflow" in GitHub Actions tab
+    inputs:
+      from_year:
+        description: 'Scrape from year (default 2020)'
+        required: false
+        default: '2020'
+      to_year:
+        description: 'Scrape to year (default current)'
+        required: false
+        default: '2026'
+
+jobs:
+  scrape-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run scraper
+        run: python scraper.py
+        env:
+          FROM_YEAR: ${{ github.event.inputs.from_year }}
+          TO_YEAR: ${{ github.event.inputs.to_year }}
+
+      - name: Run summariser
+        run: python summarise_v2.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Copy summaries.html to index.html
+        run: cp output/summaries.html index.html
+
+      - name: Commit and push updated site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html data/summaries.json data/hansard_full.json
+          git diff --staged --quiet || git commit -m "Auto-update: Parliament scrape $(date +'%d %b %Y')"
+          git push
