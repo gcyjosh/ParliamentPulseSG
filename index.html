@@ -1797,14 +1797,19 @@ const state = { concern:'all', year:'all', date:'all', search:'', page:1 };
 function setFilter(type, value, btn) {
   state[type] = value;
   state.page = 1;
-  if (type === 'year') {
+  if (btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  applyFilters();
+}
+
+function onYearChange(value) {
+  state.year = value;
+  state.page = 1;
+  if (value !== 'all') {
     state.date = 'all';
     document.getElementById('date-select').value = 'all';
-  }
-  if (btn) {
-    const sel = type === 'concern' ? '.filter-btn' : '.year-btn';
-    document.querySelectorAll(sel).forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
   }
   applyFilters();
 }
@@ -1814,8 +1819,7 @@ function onDateChange(value) {
   state.page = 1;
   if (value !== 'all') {
     state.year = 'all';
-    document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.year-btn[data-value="all"]').classList.add('active');
+    document.getElementById('year-select').value = 'all';
   }
   applyFilters();
 }
@@ -1901,3 +1905,4 @@ window.onload = () => applyFilters();
 </script>
 </body>
 </html>
+
